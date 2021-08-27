@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <boost/bimap.hpp>
 
 #include <ros/subscriber.h>
 
@@ -47,6 +48,9 @@ class TargetTrajectoriesKeyboardPublisher final {
  public:
   using CommandLineToTargetTrajectories =
       std::function<TargetTrajectories(const vector_t& commadLineTarget, const SystemObservation& observation)>;
+
+  typedef boost::bimap<char, std::array<double, 6>> MappingIncrementalCommand;
+  typedef MappingIncrementalCommand::value_type Position;
 
   /**
    * Constructor
@@ -72,9 +76,17 @@ class TargetTrajectoriesKeyboardPublisher final {
    */
   void publishKeyboardCommand(const std::string& commadMsg = "Enter command, separated by space");
 
+  // use keyboard to control incremental robot motion
+  // use 'w', 'a', 's', 'd' to control the translation direction
+  // use 'r', 'p', 'y' to control the positive roll pitch yaw motion
+  // use 'e', 'o', 't' to control the negative roll pitch yaw motion
+  void publishKeyboardIncrementalCommand(const std::string& commadMsg);
+
  private:
   /** Gets the target from command line. */
   vector_t getCommandLine();
+  vector_t getIncrementalCommand( void );
+  MappingIncrementalCommand mappingCommand_{};
 
   const vector_t targetCommandLimits_;
   CommandLineToTargetTrajectories commandLineToTargetTrajectoriesFun_;

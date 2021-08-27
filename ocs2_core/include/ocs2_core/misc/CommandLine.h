@@ -37,6 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <thread>
 #include <vector>
 
+#include <termios.h>
+
 namespace ocs2 {
 
 /**
@@ -52,6 +54,45 @@ inline std::string getCommandLineString(bool (*shouldTerminate)() = []() { retur
     lineRead = false;
     getline(std::cin, line);
     lineRead = true;
+  });
+
+  // wait till line is read or terminate if ROS is gone.
+  const std::chrono::duration<double, std::ratio<1, 30>> hz30(1);  // 30Hz clock using fractional ticks
+  while (!lineRead) {
+    if (shouldTerminate()) {
+      std::terminate();  // need to terminate thread that is still waiting for input
+    }
+    std::this_thread::sleep_for(hz30);
+  }
+  if (thr.joinable()) {
+    thr.join();
+  }
+  return line;
+}
+
+/**
+ * Gets a command line string ('w', 'a', 's', 'd', 'e', 'r', 't', 'y', 'o', 'p').
+ * @praram [in] shouldTerminate: A function signals termination of the line reading thread. For example, one
+ * can use this to terminate if the rosmaster is stopped.
+ */
+inline char getIncrementalCommandChar(bool (*shouldTerminate)() = []() { return false; }) {
+  // Set up a thread to read user inputs
+  char line{};
+  std::atomic_bool lineRead(false);
+  std::thread thr([&line, &lineRead]() {
+  // get the input without enter command
+    termios t;
+    tcgetattr(STDIN_FILENO, &t);
+    t.c_lflag &= ~ICANON;
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+    lineRead = false;
+    line = getchar();
+    printf("\n");
+    lineRead = true;
+
+    t.c_lflag |= ICANON;
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
   });
 
   // wait till line is read or terminate if ROS is gone.

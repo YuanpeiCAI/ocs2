@@ -53,6 +53,19 @@ TargetTrajectoriesKeyboardPublisher::TargetTrajectoriesKeyboardPublisher(::ros::
 
   // Trajectories publisher
   targetTrajectoriesPublisherPtr_.reset(new TargetTrajectoriesRosPublisher(nodeHandle, topicPrefix));
+
+  // initialize command mapping from keyboard command
+  mappingCommand_.insert(Position('w', {0.1, 0.0, 0.0, 0.0, 0.0, 0.0}));
+  mappingCommand_.insert(Position('s', {-0.1, 0.0, 0.0, 0.0, 0.0, 0.0}));
+  mappingCommand_.insert(Position('a', {0.0, 0.1, 0.0, 0.0, 0.0, 0.0}));
+  mappingCommand_.insert(Position('d', {0.0, -0.1, 0.0, 0.0, 0.0, 0.0}));
+  mappingCommand_.insert(Position('r', {0.0, 0.0, 0.0, 0.01, 0.0, 0.0}));
+  mappingCommand_.insert(Position('e', {0.0, 0.0, 0.0, -0.01, 0.0, 0.0}));
+  mappingCommand_.insert(Position('p', {0.0, 0.0, 0.0, 0.0, 0.01, 0.0}));
+  mappingCommand_.insert(Position('o', {0.0, 0.0, 0.0, 0.0, -0.01, 0.0}));
+  mappingCommand_.insert(Position('y', {0.0, 0.0, 0.0, 0.0, 0.0, 0.01}));
+  mappingCommand_.insert(Position('t', {0.0, 0.0, 0.0, 0.0, 0.0, -0.01}));
+
 }
 
 /******************************************************************************************************/
@@ -86,6 +99,34 @@ void TargetTrajectoriesKeyboardPublisher::publishKeyboardCommand(const std::stri
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
+void TargetTrajectoriesKeyboardPublisher::publishKeyboardIncrementalCommand(const std::string& commadMsg) {
+
+  while (ros::ok() && ros::master::check()) {
+    // get command line
+    std::cout << commadMsg << ": ";
+
+    vector_t incrementalCommand = getIncrementalCommand();
+
+    // get the latest observation
+    ::ros::spinOnce();
+    SystemObservation observation;
+    {
+      std::lock_guard<std::mutex> lock(latestObservationMutex_);
+      observation = latestObservation_;
+    }
+
+    // get TargetTrajectories
+    const auto targetTrajectories = commandLineToTargetTrajectoriesFun_(incrementalCommand, observation);
+
+    // publish TargetTrajectories
+    targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
+  }  // end of while loop
+}
+
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
 vector_t TargetTrajectoriesKeyboardPublisher::getCommandLine() {
   // get command line as one long string
   auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
@@ -101,6 +142,28 @@ vector_t TargetTrajectoriesKeyboardPublisher::getCommandLine() {
   }
 
   return targetCommand;
+}
+
+vector_t TargetTrajectoriesKeyboardPublisher::getIncrementalCommand( void ) {
+    const char commandLineInput = getIncrementalCommandChar();
+    // find the corresponsing velocity command
+    MappingIncrementalCommand::left_const_iterator iter = mappingCommand_.left.find(commandLineInput);
+    if (iter == mappingCommand_.left.end()) {
+      std::cout<<"The command ";
+      std::cout<<commandLineInput;
+      std::cout << " does not exist!!\n";
+    }
+    // return vector command
+    vector_t incrementalCommand{};
+    incrementalCommand.setConstant(6, 0.0);
+    incrementalCommand(0) = iter->second[0];
+    incrementalCommand(1) = iter->second[1];
+    incrementalCommand(2) = iter->second[2];
+    incrementalCommand(3) = iter->second[3];
+    incrementalCommand(4) = iter->second[4];
+    incrementalCommand(5) = iter->second[5];
+
+    return incrementalCommand;
 }
 
 }  // namespace ocs2

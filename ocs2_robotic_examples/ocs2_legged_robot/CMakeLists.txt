@@ -143,6 +143,19 @@ target_link_libraries(legged_robot_target
 )
 target_compile_options(legged_robot_target PUBLIC ${pinocchio_CFLAGS_OTHER})
 
+# using keyboard directcion to control the robot motion direction
+add_executable(legged_robot_target_incremental_command
+  src/LeggedRobotIncrementalPoseCommandNode.cpp
+)
+add_dependencies(legged_robot_target_incremental_command
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(legged_robot_target_incremental_command
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
 add_executable(legged_robot_gait_command
   src/gait/Gait.cpp
   src/gait/ModeSequenceTemplate.cpp
@@ -170,6 +183,7 @@ if(cmake_clang_tools_FOUND)
      legged_robot_mpc
      legged_robot_dummy
      legged_robot_target
+     legged_robot_target_incremental_command
      legged_robot_gait_command
      SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/test
      CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -192,6 +206,7 @@ install(TARGETS
   legged_robot_mpc
   legged_robot_dummy
   legged_robot_target
+  legged_robot_target_incremental_command
   legged_robot_gait_command
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
