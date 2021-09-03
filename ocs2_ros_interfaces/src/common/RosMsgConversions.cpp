@@ -77,6 +77,22 @@ SystemObservation readObservationMsg(const ocs2_msgs::mpc_observation& observati
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
+vector_t readTwistCommandMsg(const geometry_msgs::Twist& twistMsg) {
+  vector_t twist(6);
+
+  twist[0] = twistMsg.linear.x;
+  twist[1] = twistMsg.linear.y;
+  twist[2] = twistMsg.linear.z;
+  twist[3] = twistMsg.angular.x;
+  twist[4] = twistMsg.angular.x;
+  twist[5] = twistMsg.angular.x;
+
+  return twist;
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
 ocs2_msgs::mode_schedule createModeScheduleMsg(const ModeSchedule& modeSchedule) {
   ocs2_msgs::mode_schedule modeScheduleMsg;
   // event times

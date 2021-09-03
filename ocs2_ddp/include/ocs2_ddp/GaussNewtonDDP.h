@@ -59,6 +59,9 @@ namespace ocs2 {
  */
 class GaussNewtonDDP : public SolverBase {
  public:
+  bool lastestIsSeacchFailed = false;
+  std::mutex lastestIsSeacchFailedMutex;// protecting lastestIsSeacchFailed
+
   struct ConstraintPenaltyCoefficients {
     scalar_t stateEqConstrPenaltyTol = 1e-3;
     scalar_t stateEqConstrPenaltyCoeff = 0.0;
@@ -138,6 +141,9 @@ class GaussNewtonDDP : public SolverBase {
    * @param [in] controllerEventTimes: The control policy stock's event times.
    */
   void adjustController(const scalar_array_t& newEventTimes, const scalar_array_t& controllerEventTimes);
+
+  // get the result of search strategy
+  bool isSearchFailed(void);
 
  protected:
   /**

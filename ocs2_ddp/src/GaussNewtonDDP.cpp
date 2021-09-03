@@ -1219,6 +1219,11 @@ void GaussNewtonDDP::runSearchStrategy(scalar_t expectedCost) {
     // replace the cached controller as the nominal
     nominalControllersStock_.swap(cachedControllersStock_);
   }
+  // @TODO(Yuanpei): mpc reset
+  // {
+  //   std::lock_guard<std::mutex> lock(lastestIsSeacchFailedMutex);
+  //   lastestIsSeacchFailed = !success;
+  // }
 }
 
 /******************************************************************************************************/
@@ -1676,5 +1681,12 @@ void GaussNewtonDDP::runImpl(scalar_t initTime, const vector_t& initState, scala
     }
   }
 }
+
+
+bool GaussNewtonDDP::isSearchFailed(void) {
+  std::lock_guard<std::mutex> lock(lastestIsSeacchFailedMutex);
+  return lastestIsSeacchFailed;
+}
+
 
 }  // namespace ocs2

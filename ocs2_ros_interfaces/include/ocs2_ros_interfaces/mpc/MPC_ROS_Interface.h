@@ -47,6 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_msgs/mpc_observation.h>
 #include <ocs2_msgs/mpc_target_trajectories.h>
 #include <ocs2_msgs/reset.h>
+#include <ocs2_msgs/mpc_diverge.h>
 
 #include <ocs2_core/control/FeedforwardController.h>
 #include <ocs2_core/control/LinearController.h>
@@ -112,6 +113,11 @@ class MPC_ROS_Interface {
   bool resetMpcCallback(ocs2_msgs::reset::Request& req, ocs2_msgs::reset::Response& res);
 
   /**
+   * report MPC divergence.
+   */
+  void reportMpcDiverge(void);
+
+  /**
    * Creates MPC Policy message.
    *
    * @param [in] primalSolution: The policy data of the MPC.
@@ -157,6 +163,7 @@ class MPC_ROS_Interface {
   ::ros::Subscriber mpcTargetTrajectoriesSubscriber_;
   ::ros::Publisher mpcPolicyPublisher_;
   ::ros::ServiceServer mpcResetServiceServer_;
+  ::ros::ServiceClient mpcReportDivergenceServiceClient_;
 
   std::unique_ptr<CommandData> bufferCommandPtr_;
   std::unique_ptr<CommandData> publisherCommandPtr_;

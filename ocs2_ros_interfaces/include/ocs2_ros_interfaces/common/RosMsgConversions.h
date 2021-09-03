@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_msgs/mpc_observation.h>
 #include <ocs2_msgs/mpc_performance_indices.h>
 #include <ocs2_msgs/mpc_target_trajectories.h>
+#include <geometry_msgs/Twist.h>
 
 namespace ocs2 {
 namespace ros_msg_conversions {
@@ -49,6 +50,9 @@ ocs2_msgs::mpc_observation createObservationMsg(const SystemObservation& observa
 
 /** Reads the observation message. */
 SystemObservation readObservationMsg(const ocs2_msgs::mpc_observation& observationMsg);
+
+/** Reads the twist command from the master devices */
+vector_t readTwistCommandMsg(const geometry_msgs::Twist& twistMsg);
 
 /** Creates the mode sequence message. */
 ocs2_msgs::mode_schedule createModeScheduleMsg(const ModeSchedule& modeSchedule);

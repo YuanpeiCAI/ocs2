@@ -1,0 +1,4 @@
+# Reset service 
+bool                      isDiverge
+---
+bool                      done

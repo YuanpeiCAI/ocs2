@@ -35,6 +35,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/bimap.hpp>
 
 #include <ros/subscriber.h>
+#include <ros/ros.h>
+#include <geometry_msgs/Twist.h>
+#include <ocs2_msgs/mpc_diverge.h>
+#include <ocs2_msgs/reset_mrt.h>
 
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
@@ -82,6 +86,17 @@ class TargetTrajectoriesKeyboardPublisher final {
   // use 'e', 'o', 't' to control the negative roll pitch yaw motion
   void publishKeyboardIncrementalCommand(const std::string& commadMsg);
 
+  void publishTwistCommand(void); 
+
+  // use keyboard to reset mrt
+  bool getMrtResetCommand(void);
+
+  // publish mrt reset command
+  void publishResetMrtCommand(void);
+
+  bool mpcDivergeCallback(ocs2_msgs::mpc_diverge::Request& req, ocs2_msgs::mpc_diverge::Response& res);
+  
+
  private:
   /** Gets the target from command line. */
   vector_t getCommandLine();
@@ -96,6 +111,16 @@ class TargetTrajectoriesKeyboardPublisher final {
   ::ros::Subscriber observationSubscriber_;
   mutable std::mutex latestObservationMutex_;
   SystemObservation latestObservation_;
+
+  ::ros::Subscriber twistCommandSubscriber_;
+  mutable std::mutex latestTwistCommandMutex_;
+  vector_t latestTwistCommand_;
+  
+  ::ros::ServiceServer mpcDivergeServiceServer_;
+  mutable std::mutex lastestMpcDivergenceMutex_;
+  bool lastestMpcDivergence_{false};
+
+  ::ros::ServiceClient mrtResetServiceClient_;
 };
 
 }  // namespace ocs2

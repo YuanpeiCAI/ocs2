@@ -237,6 +237,38 @@ void MRT_ROS_Interface::shutdownPublisher() {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
+bool MRT_ROS_Interface::resetMrtCallback(ocs2_msgs::reset_mrt::Request &req, ocs2_msgs::reset_mrt::Response &res) {
+  printf("MRT node: MRT reset command has been received!!\n");
+  if (static_cast<bool>(req.reset)) {
+    setIsMrtReset(true);
+    res.done =static_cast<uint8_t>(true);
+  } else {
+    setIsMrtReset(false);
+    res.done =static_cast<uint8_t>(false);
+  }
+  return true;
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+bool MRT_ROS_Interface::getIsMrtReset(void) {
+    std::lock_guard<std::mutex> lock(latestIsMrtResetMutex);
+    return latestIsMrtReset;
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+bool MRT_ROS_Interface::setIsMrtReset(bool isMrtReset) {
+    std::lock_guard<std::mutex> lock(latestIsMrtResetMutex);
+    latestIsMrtReset = isMrtReset;
+    return true;
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
 void MRT_ROS_Interface::spinMRT() {
   mrtCallbackQueue_.callOne();
 };
@@ -266,6 +298,10 @@ void MRT_ROS_Interface::launchNodes(ros::NodeHandle& nodeHandle) {
 
   // MPC reset service client
   mpcResetServiceClient_ = nodeHandle.serviceClient<ocs2_msgs::reset>(topicPrefix_ + "_mpc_reset");
+
+  // @TODO(Yuanpei): mpc reset
+  // MRT reset service server
+  // mrtResetServiceServer_ = nodeHandle.advertiseService(topicPrefix_ + "_mrt_reset", &MRT_ROS_Interface::resetMrtCallback, this);
 
   // display
 #ifdef PUBLISH_THREAD

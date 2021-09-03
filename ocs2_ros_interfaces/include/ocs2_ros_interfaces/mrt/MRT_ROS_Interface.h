@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // MPC messages
 #include <ocs2_msgs/mpc_flattened_controller.h>
 #include <ocs2_msgs/reset.h>
+#include <ocs2_msgs/reset_mrt.h>
 
 #include <ocs2_mpc/MRT_BASE.h>
 
@@ -58,6 +59,9 @@ namespace ocs2 {
  */
 class MRT_ROS_Interface : public MRT_BASE {
  public:
+
+  bool latestIsMrtReset{true};
+  std::mutex latestIsMrtResetMutex;
   /**
    * Constructor
    *
@@ -84,6 +88,21 @@ class MRT_ROS_Interface : public MRT_BASE {
    * Shut down publisher
    */
   void shutdownPublisher();
+
+  /**
+   * Reset MRT service
+   */
+  bool resetMrtCallback(ocs2_msgs::reset_mrt::Request &req, ocs2_msgs::reset_mrt::Response &res);
+
+  /**
+   * Get reset MRT status
+   */
+  bool getIsMrtReset(void);
+
+  /**
+   * Get reset MRT status
+   */
+  bool setIsMrtReset(bool isMrtReset);
 
   /**
    * spin the MRT callback queue
@@ -130,6 +149,7 @@ class MRT_ROS_Interface : public MRT_BASE {
   ::ros::Publisher mpcObservationPublisher_;
   ::ros::Subscriber mpcPolicySubscriber_;
   ::ros::ServiceClient mpcResetServiceClient_;
+  ::ros::ServiceServer mrtResetServiceServer_;
 
   // ROS messages
   ocs2_msgs::mpc_observation mpcObservationMsg_;

@@ -60,6 +60,9 @@ class MPC_DDP : public MPC_BASE {
 
   const GaussNewtonDDP* getSolverPtr() const override { return ddpPtr_.get(); }
 
+  // get the result of search strategy in GaussNewtonDDP
+  bool isSearchFailed(void) override {return ddpPtr_->isSearchFailed();};
+
  protected:
   void calculateController(scalar_t initTime, const vector_t& initState, scalar_t finalTime) override;
 

@@ -71,6 +71,8 @@ class MRT_ROS_Dummy_Loop {
    */
   void subscribeObservers(const std::vector<std::shared_ptr<DummyObserver>>& observers) { observers_ = observers; }
 
+  SystemObservation  getObservation(void) { return observation_; }
+
  protected:
   /**
    * A user-defined function which modifies the observation before publishing.

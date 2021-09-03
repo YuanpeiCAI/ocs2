@@ -24,6 +24,8 @@ add_message_files(
 add_service_files(
     FILES
         reset.srv
+        reset_mrt.srv
+        mpc_diverge.srv
 )
 
 generate_messages(

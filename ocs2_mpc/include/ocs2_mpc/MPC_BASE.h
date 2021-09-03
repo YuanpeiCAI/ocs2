@@ -82,6 +82,9 @@ class MPC_BASE {
   /** Gets the MPC settings. */
   const mpc::Settings& settings() const { return mpcSettings_; }
 
+  // get the result of search strategy in GaussNewtonDDP
+  virtual bool isSearchFailed(void) = 0;
+
  protected:
   /**
    * Solves the optimal control problem for the given state and time period ([initTime,finalTime]).

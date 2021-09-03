@@ -50,6 +50,17 @@ TargetTrajectoriesKeyboardPublisher::TargetTrajectoriesKeyboardPublisher(::ros::
     latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
   };
   observationSubscriber_ = nodeHandle.subscribe<ocs2_msgs::mpc_observation>(topicPrefix + "_mpc_observation", 1, observationCallback);
+  // twist command subscriber
+  auto twistCommandCallback = [this](const geometry_msgs::Twist::ConstPtr& msg) {
+    std::lock_guard<std::mutex> lock(latestTwistCommandMutex_);
+    latestTwistCommand_ = ros_msg_conversions::readTwistCommandMsg(*msg);
+  };
+  twistCommandSubscriber_ = nodeHandle.subscribe<geometry_msgs::Twist>(topicPrefix + "_twist_command", 1, twistCommandCallback);
+  // mpc divergence service 
+  mpcDivergeServiceServer_ = nodeHandle.advertiseService(topicPrefix + "_mpc_diverge", &TargetTrajectoriesKeyboardPublisher::mpcDivergeCallback, this);
+
+  // mpc divergence service 
+  mrtResetServiceClient_ = nodeHandle.serviceClient<ocs2_msgs::reset_mrt>(topicPrefix + "_mrt_reset");
 
   // Trajectories publisher
   targetTrajectoriesPublisherPtr_.reset(new TargetTrajectoriesRosPublisher(nodeHandle, topicPrefix));
@@ -102,6 +113,21 @@ void TargetTrajectoriesKeyboardPublisher::publishKeyboardCommand(const std::stri
 void TargetTrajectoriesKeyboardPublisher::publishKeyboardIncrementalCommand(const std::string& commadMsg) {
 
   while (ros::ok() && ros::master::check()) {
+    bool isMpcDiverged{};
+    {
+      std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+      isMpcDiverged = lastestMpcDivergence_;
+    }
+    if (isMpcDiverged) {
+      if (getMrtResetCommand()) {
+        publishResetMrtCommand(); 
+        {
+          std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+          lastestMpcDivergence_ = false;
+        }
+      }
+      continue;
+    }
     // get command line
     std::cout << commadMsg << ": ";
 
@@ -117,6 +143,69 @@ void TargetTrajectoriesKeyboardPublisher::publishKeyboardIncrementalCommand(cons
 
     // get TargetTrajectories
     const auto targetTrajectories = commandLineToTargetTrajectoriesFun_(incrementalCommand, observation);
+
+    // publish TargetTrajectories
+    targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
+  }  // end of while loop
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void TargetTrajectoriesKeyboardPublisher::publishResetMrtCommand(void) {
+
+  ocs2_msgs::reset_mrt resetMrtSrv{};
+  resetMrtSrv.request.reset = static_cast<uint8_t>(true);
+  if (mrtResetServiceClient_.call(resetMrtSrv)) {
+    printf("MRT reset command has been received!!\n");
+    if (static_cast<bool>(resetMrtSrv.response.done)) {
+      {
+        std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+        bool lastestMpcDivergence_ = false;
+      }
+      std::cerr << "\n#####################################################"
+                << "\n#####################################################"
+                << "\n#################  MRT is reset.  ###################"
+                << "\n#####################################################"
+                << "\n#####################################################\n";
+    } else { std::cerr << "MRT is not reset!!!!!! \n"; }
+  } else {std::cerr << "MRT does NOT recievie reset message!!!!!! \n"; }
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void TargetTrajectoriesKeyboardPublisher::publishTwistCommand(void) {
+
+  while (ros::ok() && ros::master::check()) {
+    bool isMpcDiverged{};
+    {
+      std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+      isMpcDiverged = lastestMpcDivergence_;
+    }
+    if (isMpcDiverged) {
+      if (getMrtResetCommand()) {publishResetMrtCommand(); }
+      continue;
+    }
+
+    vector_t incrementalCommand = getIncrementalCommand();
+
+    // get the latest observation
+    ::ros::spinOnce();
+    SystemObservation observation;
+    {
+      std::lock_guard<std::mutex> lock(latestObservationMutex_);
+      observation = latestObservation_;
+    }
+
+    vector_t twistCommand(6);
+    {
+      std::lock_guard<std::mutex> lock(latestTwistCommandMutex_);
+      twistCommand = latestTwistCommand_;
+    }
+
+    // get TargetTrajectories
+    const auto targetTrajectories =  commandLineToTargetTrajectoriesFun_(twistCommand, observation);
 
     // publish TargetTrajectories
     targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
@@ -145,6 +234,8 @@ vector_t TargetTrajectoriesKeyboardPublisher::getCommandLine() {
 }
 
 vector_t TargetTrajectoriesKeyboardPublisher::getIncrementalCommand( void ) {
+    vector_t incrementalCommand{};
+    incrementalCommand.setConstant(6, 0.0);
     const char commandLineInput = getIncrementalCommandChar();
     // find the corresponsing velocity command
     MappingIncrementalCommand::left_const_iterator iter = mappingCommand_.left.find(commandLineInput);
@@ -152,10 +243,9 @@ vector_t TargetTrajectoriesKeyboardPublisher::getIncrementalCommand( void ) {
       std::cout<<"The command ";
       std::cout<<commandLineInput;
       std::cout << " does not exist!!\n";
+      return incrementalCommand;
     }
     // return vector command
-    vector_t incrementalCommand{};
-    incrementalCommand.setConstant(6, 0.0);
     incrementalCommand(0) = iter->second[0];
     incrementalCommand(1) = iter->second[1];
     incrementalCommand(2) = iter->second[2];
@@ -165,5 +255,28 @@ vector_t TargetTrajectoriesKeyboardPublisher::getIncrementalCommand( void ) {
 
     return incrementalCommand;
 }
+
+bool TargetTrajectoriesKeyboardPublisher::getMrtResetCommand( void ) {
+    std::cout << "Please type \"reset\" to reset MRT node and MPC node: ";
+    // get command line as one long string
+    auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
+    const std::string line = getCommandLineString(shouldTerminate);
+    if (line == "reset") {
+      return true;
+    } else {
+      std::cout<<"Please check your input. \n";
+      return false;
+    }
+}
+
+bool TargetTrajectoriesKeyboardPublisher::mpcDivergeCallback(ocs2_msgs::mpc_diverge::Request& req, ocs2_msgs::mpc_diverge::Response& res) {
+  if (static_cast<bool>(req.isDiverge)) {
+    std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+    lastestMpcDivergence_ = true;
+    res.done = static_cast<uint8_t>(true);
+  }
+  return true;
+}
+
 
 }  // namespace ocs2

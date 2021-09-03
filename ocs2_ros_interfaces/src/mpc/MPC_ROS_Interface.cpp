@@ -79,7 +79,6 @@ bool MPC_ROS_Interface::resetMpcCallback(ocs2_msgs::reset::Request& req, ocs2_ms
     auto targetTrajectories = ros_msg_conversions::readTargetTrajectoriesMsg(req.targetTrajectories);
     resetMpcNode(std::move(targetTrajectories));
     res.done = static_cast<uint8_t>(true);
-
     std::cerr << "\n#####################################################"
               << "\n#####################################################"
               << "\n#################  MPC is reset.  ###################"
@@ -90,6 +89,25 @@ bool MPC_ROS_Interface::resetMpcCallback(ocs2_msgs::reset::Request& req, ocs2_ms
   } else {
     ROS_WARN_STREAM("[MPC_ROS_Interface] Reset request failed!");
     return false;
+  }
+}
+
+// @TODO(Yuanpei): mpc reset
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+void MPC_ROS_Interface::reportMpcDiverge(void) {
+  resetRequestedEver_ = false;
+  ocs2_msgs::mpc_diverge isDivergeSrv{};
+  isDivergeSrv.request.isDiverge = true;
+  if (mpcReportDivergenceServiceClient_.call(isDivergeSrv)) {
+    std::cerr << "\n#####################################################"
+              << "\n#####################################################"
+              << "\n################  MPC is diverge.  ##################"
+              << "\n#####################################################"
+              << "\n#####################################################\n";
+  } else {
+    ROS_WARN_STREAM("Failed to report MPC divergence");
   }
 }
 
@@ -251,6 +269,11 @@ void MPC_ROS_Interface::mpcObservationCallback(const ocs2_msgs::mpc_observation:
   // measure the delay for sending ROS messages
   mpcTimer_.endTimer();
 
+  // @TODO(Yuanpei): mpc reset
+  // if (mpc_.isSearchFailed()) {
+  //   reportMpcDiverge();
+  // }
+
   // check MPC delay and solution window compatibility
   scalar_t timeWindow = mpc_.settings().solutionTimeWindow_;
   if (mpc_.settings().solutionTimeWindow_ < 0) {
@@ -332,6 +355,9 @@ void MPC_ROS_Interface::launchNodes(ros::NodeHandle& nodeHandle) {
 
   // MPC reset service server
   mpcResetServiceServer_ = nodeHandle.advertiseService(topicPrefix_ + "_mpc_reset", &MPC_ROS_Interface::resetMpcCallback, this);
+
+  // @TODO(Yuanpei): mpc reset
+  // mpcReportDivergenceServiceClient_= nodeHandle.serviceClient<ocs2_msgs::mpc_diverge>(topicPrefix_ + "_mpc_diverge");
 
   // display
 #ifdef PUBLISH_THREAD

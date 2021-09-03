@@ -40,6 +40,7 @@ namespace {
 scalar_t targetDisplacementVelocity;
 scalar_t targetRotationVelocity;
 scalar_t comHeight;
+scalar_t scale;
 vector_t defaultJointState(12);
 }  // namespace
 
@@ -69,9 +70,7 @@ TargetTrajectories incrementalCommandToTargetTrajectories(const vector_t& commad
     target(5) = currentPose(5) + commadLineTarget(5);
     return target;
   }();
-
-
-
+  
   // target reaching duration
   const scalar_t targetReachingTime = observation.time + estimateTimeToTarget(targetPose - currentPose);
 
@@ -89,6 +88,45 @@ TargetTrajectories incrementalCommandToTargetTrajectories(const vector_t& commad
   return {timeTrajectory, stateTrajectory, inputTrajectory};
 }
 
+TargetTrajectories twistCommandToTargetTrajectories(const vector_t& twistCommand, const SystemObservation& observation) {
+  const vector_t currentPose = observation.state.segment<6>(6);
+  float dt = 0.1;
+  
+  const vector_t targetPose = [&]() {
+    vector_t target(6);
+    // base p_x, p_y are relative to current state
+    target(0) = currentPose(0) + scale * twistCommand(0) * dt;
+    target(1) = currentPose(1) + scale * twistCommand(1) * dt;
+    // base z relative to the default height
+    target(2) = comHeight + scale * twistCommand(2) * dt;
+    // TODO (Yuanpei): should map the absolute orientation instead of increamental command
+    // theta_z relative to current
+    target(3) = currentPose(3) + twistCommand(3) * dt;
+    // theta_y, theta_x
+    target(4) = currentPose(4) + twistCommand(4) * dt;
+    target(5) = currentPose(5) + twistCommand(5) * dt;
+    return target;
+  }();
+
+  // target reaching duration
+  const scalar_t targetReachingTime = observation.time + dt;
+
+  // desired time trajectory
+  const scalar_array_t timeTrajectory{observation.time, targetReachingTime};
+
+  // desired state trajectory
+  vector_array_t stateTrajectory(2, vector_t::Zero(observation.state.size()));
+  stateTrajectory[0] << vector_t::Zero(6), currentPose, defaultJointState;
+  stateTrajectory[1] << vector_t::Zero(6), targetPose, defaultJointState;
+
+  // desired input trajectory (just right dimensions, they are not used)
+  const vector_array_t inputTrajectory(2, vector_t::Zero(observation.input.size()));
+
+  return {timeTrajectory, stateTrajectory, inputTrajectory};
+}
+
+const bool isMasterTeleoperation = false;
+
 int main(int argc, char* argv[]) {
   std::vector<std::string> programArgs{};
   ::ros::removeROSArgs(argc, argv, programArgs);
@@ -103,6 +141,7 @@ int main(int argc, char* argv[]) {
   targetDisplacementVelocity = pt.get<scalar_t>("targetDisplacementVelocity");
   targetRotationVelocity = pt.get<scalar_t>("targetRotationVelocity");
   comHeight = pt.get<scalar_t>("comHeight");
+  scale = pt.get<scalar_t>("scale", 1.0);
   ocs2::loadData::loadEigenMatrix(targetCommandFile, "defaultJointState", defaultJointState);
 
   // ros node handle
@@ -111,10 +150,17 @@ int main(int argc, char* argv[]) {
 
   // goalPose: [deltaX, deltaY, deltaZ, deltaYaw]
   const scalar_array_t relativeBaseLimit{10.0, 10.0, 0.2, 360.0};
-  TargetTrajectoriesKeyboardPublisher targetPoseCommand(nodeHandle, robotName, relativeBaseLimit, &incrementalCommandToTargetTrajectories);
 
-  const std::string commandMsg = "use a, w, s, d to control translation\nuse e,r,t,y,o,p to control boddy orientation";
-  targetPoseCommand.publishKeyboardIncrementalCommand(commandMsg);
+  std::string commandMsg{};
+  if (isMasterTeleoperation) {
+    commandMsg = "using master to control the robot";
+    TargetTrajectoriesKeyboardPublisher twistCommand(nodeHandle, robotName, relativeBaseLimit, &twistCommandToTargetTrajectories);
+    twistCommand.publishTwistCommand();
+  } else {
+    commandMsg = "use a, w, s, d to control translation\nuse e,r,t,y,o,p to control boddy orientation";
+    TargetTrajectoriesKeyboardPublisher incrementalCommand(nodeHandle, robotName, relativeBaseLimit, &incrementalCommandToTargetTrajectories);
+    incrementalCommand.publishKeyboardIncrementalCommand(commandMsg);
+  }
   
 
   // Successful exit

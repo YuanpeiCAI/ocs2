@@ -53,6 +53,7 @@ MRT_ROS_Dummy_Loop::MRT_ROS_Dummy_Loop(MRT_ROS_Interface& mrt, scalar_t mrtDesir
 /******************************************************************************************************/
 /******************************************************************************************************/
 void MRT_ROS_Dummy_Loop::run(const SystemObservation& initObservation, const TargetTrajectories& initTargetTrajectories) {
+  mrt_.setIsMrtReset(false);
   ros::WallRate rosRate(mrtDesiredFrequency_);  // in Hz
 
   // time step
@@ -102,8 +103,11 @@ void MRT_ROS_Dummy_Loop::run(const SystemObservation& initObservation, const Tar
           break;
         } else {
           mrt_.spinMRT();
+          ::ros::spinOnce();
+          if (mrt_.getIsMrtReset()) break;
         }
       }
+      if (mrt_.getIsMrtReset()) break;
       std::cout << "<<< Message received at " << time << "\n";
     }
 
