@@ -1683,10 +1683,10 @@ void GaussNewtonDDP::runImpl(scalar_t initTime, const vector_t& initState, scala
 }
 
 
-bool GaussNewtonDDP::isSearchFailed(void) {
-  std::lock_guard<std::mutex> lock(lastestIsSeacchFailedMutex);
-  return lastestIsSeacchFailed;
-}
+// bool GaussNewtonDDP::isSearchFailed(void) {
+//   std::lock_guard<std::mutex> lock(lastestIsSeacchFailedMutex);
+//   return lastestIsSeacchFailed;
+// }
 
 
 }  // namespace ocs2

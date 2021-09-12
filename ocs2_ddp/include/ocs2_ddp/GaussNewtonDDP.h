@@ -142,8 +142,8 @@ class GaussNewtonDDP : public SolverBase {
    */
   void adjustController(const scalar_array_t& newEventTimes, const scalar_array_t& controllerEventTimes);
 
-  // get the result of search strategy
-  bool isSearchFailed(void);
+  // // get the result of search strategy
+  // bool isSearchFailed(void);
 
  protected:
   /**

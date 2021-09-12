@@ -82,8 +82,8 @@ class MPC_BASE {
   /** Gets the MPC settings. */
   const mpc::Settings& settings() const { return mpcSettings_; }
 
-  // get the result of search strategy in GaussNewtonDDP
-  virtual bool isSearchFailed(void) = 0;
+  // // get the result of search strategy in GaussNewtonDDP
+  // virtual bool isSearchFailed(void) = 0;
 
  protected:
   /**
