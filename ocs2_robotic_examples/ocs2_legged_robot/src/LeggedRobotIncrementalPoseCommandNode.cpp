@@ -125,7 +125,10 @@ TargetTrajectories twistCommandToTargetTrajectories(const vector_t& twistCommand
   return {timeTrajectory, stateTrajectory, inputTrajectory};
 }
 
-const bool isMasterTeleoperation = false;
+// teleoperation mode
+// 1: master input
+// 2: key board input
+const int teleopMode = 1;
 
 int main(int argc, char* argv[]) {
   std::vector<std::string> programArgs{};
@@ -152,14 +155,19 @@ int main(int argc, char* argv[]) {
   const scalar_array_t relativeBaseLimit{10.0, 10.0, 0.2, 360.0};
 
   std::string commandMsg{};
-  if (isMasterTeleoperation) {
-    commandMsg = "using master to control the robot";
-    TargetTrajectoriesKeyboardPublisher twistCommand(nodeHandle, robotName, relativeBaseLimit, &twistCommandToTargetTrajectories);
-    twistCommand.publishTwistCommand();
-  } else {
-    commandMsg = "use a, w, s, d to control translation\nuse e,r,t,y,o,p to control boddy orientation";
-    TargetTrajectoriesKeyboardPublisher incrementalCommand(nodeHandle, robotName, relativeBaseLimit, &incrementalCommandToTargetTrajectories);
-    incrementalCommand.publishKeyboardIncrementalCommand(commandMsg);
+  switch(teleopMode) {
+    case 1: {
+      commandMsg = "using master to control the robot";
+      TargetTrajectoriesKeyboardPublisher twistCommand(nodeHandle, robotName, relativeBaseLimit, &twistCommandToTargetTrajectories);
+      twistCommand.publishTwistCommand();
+      break;
+    }
+    case 2: {
+      commandMsg = "use a, w, s, d to control translation\nuse e,r,t,y,o,p to control boddy orientation";
+      TargetTrajectoriesKeyboardPublisher incrementalCommand(nodeHandle, robotName, relativeBaseLimit, &incrementalCommandToTargetTrajectories);
+      incrementalCommand.publishKeyboardIncrementalCommand(commandMsg);
+      break;
+    }
   }
   
 

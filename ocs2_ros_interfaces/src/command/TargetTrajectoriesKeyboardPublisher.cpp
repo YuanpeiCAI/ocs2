@@ -176,7 +176,8 @@ void TargetTrajectoriesKeyboardPublisher::publishResetMrtCommand(void) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 void TargetTrajectoriesKeyboardPublisher::publishTwistCommand(void) {
-
+  // wait for the system to start up
+  ros::Duration(10.0).sleep();
   while (ros::ok() && ros::master::check()) {
     bool isMpcDiverged{};
     {
@@ -184,11 +185,15 @@ void TargetTrajectoriesKeyboardPublisher::publishTwistCommand(void) {
       isMpcDiverged = lastestMpcDivergence_;
     }
     if (isMpcDiverged) {
-      if (getMrtResetCommand()) {publishResetMrtCommand(); }
+      if (getMrtResetCommand()) {
+        publishResetMrtCommand(); 
+        {
+          std::lock_guard<std::mutex> lock(lastestMpcDivergenceMutex_);
+          lastestMpcDivergence_ = false;
+        }
+      }
       continue;
     }
-
-    vector_t incrementalCommand = getIncrementalCommand();
 
     // get the latest observation
     ::ros::spinOnce();
@@ -205,7 +210,7 @@ void TargetTrajectoriesKeyboardPublisher::publishTwistCommand(void) {
     }
 
     // get TargetTrajectories
-    const auto targetTrajectories =  commandLineToTargetTrajectoriesFun_(twistCommand, observation);
+    const auto targetTrajectories = commandLineToTargetTrajectoriesFun_(twistCommand, observation);
 
     // publish TargetTrajectories
     targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);

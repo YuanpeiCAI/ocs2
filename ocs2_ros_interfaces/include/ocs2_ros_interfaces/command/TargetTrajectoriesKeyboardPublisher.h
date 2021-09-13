@@ -114,7 +114,7 @@ class TargetTrajectoriesKeyboardPublisher final {
 
   ::ros::Subscriber twistCommandSubscriber_;
   mutable std::mutex latestTwistCommandMutex_;
-  vector_t latestTwistCommand_;
+  vector_t latestTwistCommand_ = vector_t::Zero(6);
   
   ::ros::ServiceServer mpcDivergeServiceServer_;
   mutable std::mutex lastestMpcDivergenceMutex_;
