@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 #include <string>
 #include <vector>
 
@@ -52,10 +53,14 @@ class LeggedRobotModeSequenceKeyboard {
   /** Prints the list of available gaits. */
   void printGaitList(const std::vector<std::string>& gaitList) const;
 
+  void modeSequenceSubCallback(const std_msgs::Empty& msgs);
+
   std::vector<std::string> gaitList_;
   std::map<std::string, ModeSequenceTemplate> gaitMap_;
 
   ros::Publisher modeSequenceTemplatePublisher_;
+  ros::Subscriber modeSequenceSub_;
+  bool isNodeStart_{false};
 };
 
 }  // namespace legged_robot

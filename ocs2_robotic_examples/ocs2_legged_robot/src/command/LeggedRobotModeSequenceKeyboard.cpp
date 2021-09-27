@@ -47,6 +47,7 @@ LeggedRobotModeSequenceKeyboard::LeggedRobotModeSequenceKeyboard(ros::NodeHandle
   loadData::loadStdVector(gaitFile, "list", gaitList_, verbose);
 
   modeSequenceTemplatePublisher_ = nodeHandle.advertise<ocs2_msgs::mode_schedule>(robotName + "_mpc_mode_schedule", 1, true);
+  modeSequenceSub_ = nodeHandle.subscribe("/StartLeggedRobot", 1, &LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback, this);
 
   gaitMap_.clear();
   for (const auto& gaitName : gaitList_) {
@@ -63,8 +64,13 @@ void LeggedRobotModeSequenceKeyboard::getKeyboardCommand() {
   std::cout << commadMsg << ": ";
 
   auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
-  const auto commandLine = stringToWords(getCommandLineString(shouldTerminate));
+  auto commandLine = stringToWords(getCommandLineString(shouldTerminate));
 
+  if (isNodeStart_) {
+    commandLine = stringToWords("pace");
+    isNodeStart_ = false;
+    printf("received gain commad!\n");
+  }
   if (commandLine.empty()) {
     return;
   }
@@ -102,6 +108,10 @@ void LeggedRobotModeSequenceKeyboard::printGaitList(const std::vector<std::strin
     std::cout << "[" << itr++ << "]: " << s << "\n";
   }
   std::cout << std::endl;
+}
+
+void LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback(const std_msgs::Empty& msgs) {
+    isNodeStart_ = true;
 }
 
 }  // namespace legged_robot
