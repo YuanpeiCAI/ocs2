@@ -32,6 +32,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace ocs2;
 using namespace legged_robot;
 
+
+// teleoperation mode
+// 1: master input
+// 2: key board input
+const int teleopMode = 1;
+
 int main(int argc, char* argv[]) {
   std::vector<std::string> programArgs{};
   ::ros::removeROSArgs(argc, argv, programArgs);
@@ -48,7 +54,15 @@ int main(int argc, char* argv[]) {
   LeggedRobotModeSequenceKeyboard modeSequenceCommand(nodeHandle, gaitFile, robotName, true);
 
   while (ros::ok() && ros::master::check()) {
-    modeSequenceCommand.getKeyboardCommand();
+    if (teleopMode == 1) {
+      ros::spinOnce();
+    } else if (teleopMode == 2) {
+      modeSequenceCommand.getKeyboardCommand();
+    } else {
+      printf("Undefined teleoperation mode!!\n");
+      printf("Press any key to exit...");
+      getchar();
+    }
   }
 
   // Successful exit

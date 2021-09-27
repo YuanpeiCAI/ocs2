@@ -66,11 +66,6 @@ void LeggedRobotModeSequenceKeyboard::getKeyboardCommand() {
   auto shouldTerminate = []() { return !ros::ok() || !ros::master::check(); };
   auto commandLine = stringToWords(getCommandLineString(shouldTerminate));
 
-  if (isNodeStart_) {
-    commandLine = stringToWords("pace");
-    isNodeStart_ = false;
-    printf("received gain commad!\n");
-  }
   if (commandLine.empty()) {
     return;
   }
@@ -110,8 +105,17 @@ void LeggedRobotModeSequenceKeyboard::printGaitList(const std::vector<std::strin
   std::cout << std::endl;
 }
 
-void LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback(const std_msgs::Empty& msgs) {
-    isNodeStart_ = true;
+void LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback(const std_msgs::String& msgs) {
+  std::vector<std::string>  commandLine = stringToWords(msgs.data);
+  auto gaitCommand = commandLine.front();
+
+  try {
+    ModeSequenceTemplate modeSequenceTemplate = gaitMap_.at(gaitCommand);
+    modeSequenceTemplatePublisher_.publish(createModeSequenceTemplateMsg(modeSequenceTemplate));
+  } catch (const std::out_of_range& e) {
+    std::cout << "Gait \"" << gaitCommand << "\" not found.\n";
+    printGaitList(gaitList_);
+  }
 }
 
 }  // namespace legged_robot

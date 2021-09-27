@@ -128,7 +128,7 @@ TargetTrajectories twistCommandToTargetTrajectories(const vector_t& twistCommand
 // teleoperation mode
 // 1: master input
 // 2: key board input
-const int teleopMode = 1;
+const int teleopMode = 2;
 
 int main(int argc, char* argv[]) {
   std::vector<std::string> programArgs{};
