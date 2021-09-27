@@ -84,8 +84,15 @@ vector_t readTwistCommandMsg(const geometry_msgs::Twist& twistMsg) {
   twist[1] = twistMsg.linear.y;
   twist[2] = twistMsg.linear.z;
   twist[3] = twistMsg.angular.x;
-  twist[4] = twistMsg.angular.x;
-  twist[5] = twistMsg.angular.x;
+  twist[4] = twistMsg.angular.y;
+  twist[5] = twistMsg.angular.z;
+  printf("Receiving twist command!\n%4f, %.4f, %.4f, %.4f, %.4f, %.4f\n", 
+  twist[0], 
+  twist[1], 
+  twist[2], 
+  twist[3], 
+  twist[4], 
+  twist[5]);
 
   return twist;
 }

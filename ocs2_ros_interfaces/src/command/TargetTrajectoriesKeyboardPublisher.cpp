@@ -70,12 +70,12 @@ TargetTrajectoriesKeyboardPublisher::TargetTrajectoriesKeyboardPublisher(::ros::
   mappingCommand_.insert(Position('s', {-0.1, 0.0, 0.0, 0.0, 0.0, 0.0}));
   mappingCommand_.insert(Position('a', {0.0, 0.1, 0.0, 0.0, 0.0, 0.0}));
   mappingCommand_.insert(Position('d', {0.0, -0.1, 0.0, 0.0, 0.0, 0.0}));
-  mappingCommand_.insert(Position('r', {0.0, 0.0, 0.0, 0.01, 0.0, 0.0}));
-  mappingCommand_.insert(Position('e', {0.0, 0.0, 0.0, -0.01, 0.0, 0.0}));
-  mappingCommand_.insert(Position('p', {0.0, 0.0, 0.0, 0.0, 0.01, 0.0}));
-  mappingCommand_.insert(Position('o', {0.0, 0.0, 0.0, 0.0, -0.01, 0.0}));
-  mappingCommand_.insert(Position('y', {0.0, 0.0, 0.0, 0.0, 0.0, 0.01}));
-  mappingCommand_.insert(Position('t', {0.0, 0.0, 0.0, 0.0, 0.0, -0.01}));
+  mappingCommand_.insert(Position('r', {0.0, 0.0, 0.0, 0.1, 0.0, 0.0}));
+  mappingCommand_.insert(Position('e', {0.0, 0.0, 0.0, -0.1, 0.0, 0.0}));
+  mappingCommand_.insert(Position('p', {0.0, 0.0, 0.0, 0.0, 0.1, 0.0}));
+  mappingCommand_.insert(Position('o', {0.0, 0.0, 0.0, 0.0, -0.1, 0.0}));
+  mappingCommand_.insert(Position('y', {0.0, 0.0, 0.0, 0.0, 0.0, 0.1}));
+  mappingCommand_.insert(Position('t', {0.0, 0.0, 0.0, 0.0, 0.0, -0.1}));
 
 }
 
