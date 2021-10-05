@@ -47,7 +47,7 @@ LeggedRobotModeSequenceKeyboard::LeggedRobotModeSequenceKeyboard(ros::NodeHandle
   loadData::loadStdVector(gaitFile, "list", gaitList_, verbose);
 
   modeSequenceTemplatePublisher_ = nodeHandle.advertise<ocs2_msgs::mode_schedule>(robotName + "_mpc_mode_schedule", 1, true);
-  modeSequenceSub_ = nodeHandle.subscribe("/StartLeggedRobot", 1, &LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback, this);
+  modeSequenceSub_ = nodeHandle.subscribe("/Teleoperation/LeggedRobotGaitMode", 1, &LeggedRobotModeSequenceKeyboard::modeSequenceSubCallback, this);
 
   gaitMap_.clear();
   for (const auto& gaitName : gaitList_) {
